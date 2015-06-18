@@ -1,11 +1,12 @@
-Votanto is the first electronic voting system recognized by humans.
-Here the documents that describe this system.
+Votanto is the first electronic voting system [recognizable](http://www.slideshare.net/salvatorelionetti/1-recognizable-system-42069620) by humans.
 
-* [http://www.slideshare.net/salvatorelionetti/1-recognizable-system-42069620](1-recognizable-system)
-* [http://www.slideshare.net/salvatorelionetti/2-votanto](http://www.slideshare.net/salvatorelionetti/2-votanto)
-* [http://www.slideshare.net/salvatorelionetti/3-composition](http://www.slideshare.net/salvatorelionetti/3-composition)
-* [http://www.slideshare.net/salvatorelionetti/4-recognize](http://www.slideshare.net/salvatorelionetti/4-recognize)
+## Description
+* [Mind map](https://github.com/salvatorelionetti/votanto/raw/master/doc/vym/png/Recognizable%20electronic%20system.png)
+* [Presentation](https://github.com/salvatorelionetti/votanto/raw/master/doc/vym/odp/Recognizable%20electronic%20system.opd)
+* [Other](http://www.slideshare.net/salvatorelionetti/2-votanto)
 
-Here a mind map:
-* 
+## Use cases
+* [composition](http://www.slideshare.net/salvatorelionetti/3-composition)
+* [recognize](http://www.slideshare.net/salvatorelionetti/4-recognize)
+
 Enjoy

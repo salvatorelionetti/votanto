@@ -17,7 +17,9 @@ from optparse import OptionParser
 import subprocess
 import traceback
 import re
-import threading
+
+import public
+
 
 
 pin_code = "0000"
@@ -26,14 +28,11 @@ def getRSSI(address):
 	ret = None # RSSI Unknown
         cmd = 'hcitool rssi %s'%address
 	print cmd
-        #subprocess.call(cmd, shell=True)
 	cmd = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 	for line in cmd.stdout:
 		print '<',line,'>'
 		m = re.match('RSSI return value: *(-?[0-9]+)', line)
-		print 'ciao', type(m),m
 		if m is not None:
-			print m.groups()
 			if len(m.groups())==1:
 				ret = int(m.group(1))
 
@@ -41,6 +40,26 @@ def getRSSI(address):
 	return ret
 
 class Agent(dbus.service.Object):
+
+    def getDevice(self, device_path):
+        bus = dbus.SystemBus()
+        device_object = bus.get_object("org.bluez", device_path)
+        device = dbus.Interface(device_object, "org.bluez.Device")
+        return device
+
+    def getDeviceProps(self, device_path):
+        device = self.getDevice(device_path)
+        properties = device.GetProperties()
+        return properties
+
+    def trustDevice(self, device_path):
+        device = self.getDevice(device_path)
+        device.SetProperty("Trusted", dbus.Boolean(True))
+
+    def makePublic(self, properties, passKey):
+        btName = properties["Alias"]
+        btAddr = properties["Address"]
+        public.sayPairingFrom(btAddr, btName, passKey)
 
     @dbus.service.signal("org.bluez.Adapter", signature="sv")
     def PropertyChanged(self, setting, value):
@@ -52,11 +71,10 @@ class Agent(dbus.service.Object):
 
     @dbus.service.method("org.bluez.Agent", in_signature="o", out_signature="s")
     def RequestPinCode(self, device_path):
-        device = dbus.Interface(bus.get_object("org.bluez", device_path), "org.bluez.Device")
-        properties = device.GetProperties()
-        print "0Pairing and trusting device %s [%s]" % (properties["Alias"], properties["Address"])
-	#print properties
-        device.SetProperty("Trusted", dbus.Boolean(True))
+        properties = self.getDeviceProp(device_path)
+        msg = "0Pairing and trusting device %s [%s]"
+        print msg % (properties["Alias"], properties["Address"])
+        self.trustDevice(device_path)
         return pin_code
 
     @dbus.service.method("org.bluez.Agent", in_signature="ou", out_signature="")
@@ -67,23 +85,16 @@ class Agent(dbus.service.Object):
 		traceback.print_exc()
 
     def _RequestConfirmation(self, device_path, passkey):
-        device = dbus.Interface(bus.get_object("org.bluez", device_path), "org.bluez.Device")
-        properties = device.GetProperties()
-        print "1Pairing and trusting device %s [%s] with passkey [%s]" % (properties["Alias"], properties["Address"], passkey)
-	#print properties
-        cmd = 'hcitool rssi %s'%properties["Address"]
+        properties = self.getDeviceProps(device_path)
+        msg = "1Pairing and trusting device %s [%s] with passkey [%s]"
+        print msg % (properties["Alias"], properties["Address"], passkey)
+        
+        #print properties
+        # pair the device only if near the host bluetooth controller
 	rssi = getRSSI(properties["Address"])
 	if rssi==0:
-		device.SetProperty("Trusted", dbus.Boolean(True))
-
-        # get the Bluez manager and default bluetooth adapter
-        manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.bluez.Manager")
-        adapter_path = manager.DefaultAdapter()
-        adapter = dbus.Interface(bus.get_object("org.bluez", adapter_path), "org.bluez.Adapter")
-
-        # set the adapter to discoverable 
-        #print "Making Bluetooth adapter discoverable"
-        #adapter.SetProperty("Discoverable", dbus.Boolean(True))
+                self.makePublic(properties, passkey)
+                self.trustDevice(device_path)
 
         return
 
@@ -104,7 +115,6 @@ def set_discoverable():
 def _set_discoverable():
     print '_set_discoverable'
     bus = dbus.SystemBus()
-    print type(bus),bus
 
     # get the Bluez manager and default bluetooth adapter
     manager = dbus.Interface(bus.get_object("org.bluez", "/"), "org.bluez.Manager")
@@ -120,27 +130,14 @@ def property_changed(name, value):
     if name == 'Discoverable' and not value:
         # restart in a while
         print 'Restarting discoverable in 30secs start'
-        global timer
-        #threading.Timer(30.0, set_discoverable).start()
 	gobject.timeout_add_seconds (30, set_discoverable)
 
-if __name__ == '__main__':
+def startAgent():
+    print 'Starting as not reachable'
 
-    #threading.Timer(1.0, set_discoverable).start()
-    #sys.exit(0)
-
-    print 'not reacable'
     if (os.getuid() != 0):
         print "You must have root privileges to run this agent. Try 'sudo pinaple-agent [--pin <PIN>]'"
         raise SystemExit
-
-    parser = OptionParser()
-    parser.add_option("-p", "--pin", action="store", dest="pin_code", help="PIN code to pair with", metavar="PIN")
-    (options, args) = parser.parse_args()
-
-    # use the pin code if provided
-    if (options.pin_code):
-        pin_code = options.pin_code
 
     # get the dbus system bus
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
@@ -178,3 +175,14 @@ if __name__ == '__main__':
 #        raise SystemExit
         mainloop.quit()
 
+if __name__ == '__main__':
+
+    parser = OptionParser()
+    parser.add_option("-p", "--pin", action="store", dest="pin_code", help="PIN code to pair with", metavar="PIN")
+    (options, args) = parser.parse_args()
+
+    # use the pin code if provided
+    if (options.pin_code):
+        pin_code = options.pin_code
+
+    startAgent()

@@ -5,92 +5,91 @@ import identity
 import public
 
 def validNameAndSurname(nas):
-	ret = ((type(nas) == type('')) and len(nas)>0)
-	return ret
+    ret = ((type(nas) == type('')) and len(nas)>0)
+    return ret
 
 class Votanto:
-	state = None # Opened, Voting, Closed
-	ident = None
-	lastValidNameAndSurname = None
-	president = None
-	nVoters = 0
+    state = None # Initialized, Opened, Voting, Closed
+    ident = None
+    lastValidNameAndSurname = None
+    president = None
+    nVoters = 0
+    isReaderInserted = None
+    isCardInserted = None
 
-	def __init__(self):
-		self.ident = identity.Identity(Votanto.identityChanged, self)
-		public.welcome()
+    def __init__(self):
+        self.ident = identity.Identity(Votanto.identityChanged, self)
+        public.welcome()
+        time.sleep(4)
+        self.state = 'Initialized'
+        if not self.isReaderInserted:
+            public.incomplete()
+        elif not self.isCardInserted:
+            public.insertSCP()
+        print 'Votanto init done!'
 
-	def close(self):
-		if self.ident is not None:
-			self.ident.close()
+    def close(self):
+        if self.ident is not None:
+            self.ident.close()
 
-	def selfCheck(self):
-		if not self.readerInserted():
-			print 'Oh no, non posso funzionare senza un pezzo'
+    def dump(self):
+        print 'state',self.state,'ident',self.ident,'last',self.lastValidNameAndSurname
 
-	def cardInserted(self):
-		ret = identity.Identity.cardInserted()
-		return ret
+    def identityChanged(self, msg):
+        print type(self), self, type(msg), msg
+        if msg.isReader:
+            self.isReaderInserted = msg.isInserted
+            return
 
-	def readerInserted(self):
-		ret = identity.Identity.readerInserted()
-		return ret
+        self.isCardInserted = msg.isInserted
+        if msg.isInserted:
+            if validNameAndSurname(msg.nameAndSurname):
+                self.gotIdentity(msg.nameAndSurname)
+            else:
+                print 'Identity ignored (%s) but card is inserted!'%msg.nameAndSurname
+        else:
+            self.byeIdentity()
 
-	def dump(self):
-		print 'state',self.state,'ident',self.ident,'last',self.lastValidNameAndSurname
+    def gotIdentity(self, nameAndSurname):
+        print "gotIdentity(%s,%s)"%(Votanto.state,nameAndSurname)
 
-	def identityChanged(self, msg):
-		print type(self), self, type(msg), msg
-		if msg.isReader:
-			return
+        if Votanto.president is None:
+            # This is our president
+            print 'President selected!'
+            Votanto.president = nameAndSurname
+            Votanto.state = 'Opened'
+        elif Votanto.president == nameAndSurname:
+            # Vote president and close the session
+            print 'Please vote president'
+        else:
+            # Citizen vote
+            print 'Please vote '+nameAndSurname
 
-		if msg.isInserted:
-			if validNameAndSurname(msg.nameAndSurname):
-				self.gotIdentity(msg.nameAndSurname)
-			else:
-				print 'Identity ignored (%s) but card is inserted!'%msg.nameAndSurname
-		else:
-			self.byeIdentity()
+        Votanto.lastValidNameAndSurname = nameAndSurname
 
-	def gotIdentity(self, nameAndSurname):
-		print "gotIdentity(%s,%s)"%(Votanto.state,nameAndSurname)
+    def byeIdentity(self):
+        print "byeIdentity(%s)"%Votanto.state
 
-		if Votanto.president is None:
-			# This is our president
-			print 'President selected!'
-			Votanto.president = nameAndSurname
-			Votanto.state = 'Opened'
-		elif Votanto.president == nameAndSurname:
-			# Vote president and close the session
-			print 'Please vote president'
-		else:
-			# Citizen vote
-			print 'Please vote '+nameAndSurname
+        if Votanto.state == None:
+            return
 
-		Votanto.lastValidNameAndSurname = nameAndSurname
+        if Votanto.state == 'Opened':
+            Votanto.state = 'Voting'
+        else:
+            print 'Lei ha votato'
+            Votanto.nVoters += 1
+            print '%d votanti fino ad ora'%Votanto.nVoters
 
-	def byeIdentity(self):
-		print "byeIdentity(%s)"%Votanto.state
-
-		if Votanto.state == None:
-			return
-
-		if Votanto.state == 'Opened':
-			Votanto.state = 'Voting'
-		else:
-			print 'Lei ha votato'
-			Votanto.nVoters += 1
-			print '%d votanti fino ad ora'%Votanto.nVoters
-
-			if Votanto.president == Votanto.lastValidNameAndSurname:
-				print 'Seggio chiuso'
-				Votanto.state = 'Closed'
+            if Votanto.president == Votanto.lastValidNameAndSurname:
+                print 'Seggio chiuso'
+                Votanto.state = 'Closed'
 
 votanto = None
 try:
-	votanto = Votanto()
-	time.sleep(30)
+    votanto = Votanto()
+    time.sleep(30)
 except:
-	traceback.print_exc()
+    traceback.print_exc()
 finally:
-	if votanto is not None:
-		votanto.close()
+    if votanto is not None:
+        votanto.close()

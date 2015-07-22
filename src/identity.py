@@ -18,7 +18,7 @@ class IdentityEvent:
 
 class readerobserver( smartcard.ReaderMonitoring.ReaderObserver ):
 
-    readerInserted = False
+    isReaderInserted = False
 
     def __init__( self, onChange, onChangeContext=None ):
 	smartcard.ReaderMonitoring.ReaderObserver.__init__(self)
@@ -39,14 +39,14 @@ class readerobserver( smartcard.ReaderMonitoring.ReaderObserver ):
         for reader in addedreaders:
             changed+=1
             print "+Reader: ", reader
-            readerInserted = True
+            isReaderInserted = True
         for reader in removedreaders:
             changed+=1
             print "-Reader: ", reader
-            readerInserted = False
+            isReaderInserted = False
 
 	if changed>0 and self.onChange is not None:
-		msg = IdentityEvent(True, readerInserted)
+		msg = IdentityEvent(True, isReaderInserted)
 		f = self.onChange
 		#f(self.onChangeContext)
 		f(msg)
@@ -161,14 +161,14 @@ class Identity:
     
 identity = None
 
-def onChange():
-	print "onChange"
-
 if __name__ == '__main__':
 	try:
 	    print "Insert or remove a smartcard in the system."
 	    print "This program will exit in 10 seconds"
 	    print ""
+
+            def onChange():
+                    print "onChange"
 
 	    identity = Identity(onChange)
 	    time.sleep(10)

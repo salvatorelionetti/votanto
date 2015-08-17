@@ -36,3 +36,5 @@ def sayPairingFrom(btAddr, btName, passKey):
     say('indirizzo %s'%btAddr)
     say('chiave %s'%passKey)
 
+def incomplete():
+    say('Il sistema e fermo, in attesa che tutti i suoi componenti siano collegati e funzionanti')

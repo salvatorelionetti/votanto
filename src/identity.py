@@ -130,7 +130,10 @@ class Identity:
 			self.nameAndSurname = None
 
 		if self.onChange is not None:
+		    if self.onChangeContext is not None:
 			self.onChange(self.onChangeContext, msg)
+                    else:
+			self.onChange(msg)
 
 	def cardInserted(self):
 		#print type(self), self, dir(self)
@@ -167,10 +170,16 @@ if __name__ == '__main__':
 	    print "This program will exit in 10 seconds"
 	    print ""
 
-            def onChange():
-                    print "onChange"
+            class Test(object):
+                def __init__(self):
+                    pass
+                def onChange(self, msg):
+                        print "onChange"
+                        print type(self), self
+                        print type(msg), msg
 
-	    identity = Identity(onChange)
+            test = Test()
+	    identity = Identity(test.onChange)
 	    time.sleep(10)
 
 	    #print 'press Enter to continue'

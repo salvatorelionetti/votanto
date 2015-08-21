@@ -1,5 +1,6 @@
 # Assumption
 #  class methods, once parsed, are no more modified by the interpreter
+# TODO add event coalescing like LowPass
 
 chain = {}
 
@@ -7,17 +8,22 @@ objs = {}
 
 class_of = {}
 
+def func_analyze(f):
+    nargs = f.func_code.co_argcount
+    only_self_arg = nargs==1 and f.func_code.co_varnames[0] == 'self'
+
+    return (nargs, only_self_arg)
+
 def notify(event_path):
     print 'react.notify', event_path
     if event_path in chain:
         for f in chain[event_path]:
-            nargs = f.func_code.co_argcount
-            only_self_arg = nargs==1 and f.func_code.co_varnames[0] == 'self'
+            nargs, only_self_arg = func_analyze(f)
             #print f
             if nargs == 0:
                 f()
             elif only_self_arg:
-                assert f in class_of, 'Method registered but not resolved to a class'
+                assert f in class_of, 'Method registered but not resolved to a class. Forgot to call register_triggers()?'
                 cls_name = class_of[f]
                 for obj in objs[cls_name]:
                     bounded_f = getattr(obj, f.func_name)
@@ -32,8 +38,7 @@ def register_triggers(obj):
 
     for event_path in chain:
         for f in chain[event_path]:
-            nargs = f.func_code.co_argcount
-            only_self_arg = nargs==1 and f.func_code.co_varnames[0] == 'self'
+            nargs, only_self_arg = func_analyze(f)
             if nargs==1 and only_self_arg and hasattr(obj, f.func_name):
                 bounded_f = getattr(obj, f.func_name)
                 if bounded_f.im_func is f:
@@ -67,8 +72,8 @@ def to(event_path):
 
     def decorator(f):
         print '__react__.to', event_path, f
-        nargs = f.func_code.co_argcount
-        only_self_arg = nargs==1 and f.func_code.co_varnames[0] == 'self'
+        nargs, only_self_arg = func_analyze(f)
+
         if nargs == 0:
             # Unbound method
             #print 'Unbound method'

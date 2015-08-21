@@ -8,6 +8,9 @@ import smartcard.ReaderMonitoring
 import smartcard.CardMonitoring
 import smartcard.util
 
+import model.observable
+import model.react
+
 class IdentityEvent:
 	def __init__(self, isReader, isInserted):
 		self.isReader = isReader
@@ -91,15 +94,10 @@ class cardobserver( smartcard.CardMonitoring.CardObserver ):
 		#f(self.onChangeContext)
 		f(msg)
 
-class Identity:
-	nameAndSurname = None
-
-	class Reader:
-		class Card:
-			pass
-		pass
-
+@model.observable.observable('nameAndSurname', None, 'Name and Surname from SC')
+class Identity(object):
 	def __init__(self, onChange, onChangeContext=None):
+		print 'Identity.__init__', self
 
 		self.onChange = onChange
 		self.onChangeContext = onChangeContext
@@ -113,18 +111,16 @@ class Identity:
 		self.readermonitor.addObserver( self.readerobserver )
 		self.cardmonitor.addObserver( self.cardobserver )
 
-		print 'Init done'
-
 	def close(self):
+		print 'Identity.close'
 		self.readermonitor.deleteObserver(self.readerobserver)
 		self.cardmonitor.deleteObserver(self.cardobserver)
-		print 'close done'
 
 	def topographyChanged(self, msg):
 		print msg
 
 		if not msg.isReader and msg.isInserted:
-			self.cardInserted()
+			self.annotateNameAndSurname()
 			msg.nameAndSurname = self.nameAndSurname
 		else:
 			self.nameAndSurname = None
@@ -135,8 +131,7 @@ class Identity:
                     else:
 			self.onChange(msg)
 
-	def cardInserted(self):
-		#print type(self), self, dir(self)
+	def annotateNameAndSurname(self):
 		nameAndSurname = None
 		cmd = subprocess.Popen("pkcs15-tool -D", shell=True, stdout=subprocess.PIPE)
 		out, err = cmd.communicate()
@@ -149,6 +144,7 @@ class Identity:
 				#print m.groups()
 				if len(m.groups())==1:
 					nameAndSurname=m.group(1)
+                                        print "nameAndSurname(%s)"%nameAndSurname
 				else:
 					print "Too many nameAndSurname found!"
 			elif out is not None:
@@ -174,21 +170,20 @@ if __name__ == '__main__':
                 def __init__(self):
                     pass
                 def onChange(self, msg):
-                        print "onChange"
+                        print "onChange", msg
                         print type(self), self
                         print type(msg), msg
+
+                @model.react.to('Identity.nameAndSurname')
+                def nsChanged():
+                    print "NSCHANGED!"
 
             test = Test()
 	    identity = Identity(test.onChange)
 	    time.sleep(10)
 
-	    #print 'press Enter to continue'
-	    #sys.stdin.readline()
-
 	except:
 	    traceback.print_exc()
-	    #print sys.exc_info()[0], ': ', sys.exc_info()[1]
 	finally:
 	    if identity is not None:
-		print "Closing identity submodule"
 		identity.close()

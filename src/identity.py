@@ -36,16 +36,16 @@ class readerobserver( smartcard.ReaderMonitoring.ReaderObserver ):
 
     def _update( self, observable, (addedreaders, removedreaders) ):
 	#print type(observable), observable, dir(observable)
-        print "Added readers", addedreaders
-        print "Removed readers", removedreaders
+        #print "Added readers", addedreaders
+        #print "Removed readers", removedreaders
 	changed=0
         for reader in addedreaders:
             changed+=1
-            print "+Reader: ", reader
+            #print "+Reader: ", reader
             isReaderInserted = True
         for reader in removedreaders:
             changed+=1
-            print "-Reader: ", reader
+            #print "-Reader: ", reader
             isReaderInserted = False
 
 	if changed>0 and self.onChange is not None:
@@ -76,16 +76,16 @@ class cardobserver( smartcard.CardMonitoring.CardObserver ):
 
     def _update( self, observable, (addedcards, removedcards) ):
 	#print type(observable), observable, dir(observable)
-        print "Added cards", addedcards
-        print "Removed cards", removedcards
+        #print "Added cards", addedcards
+        #print "Removed cards", removedcards
 	changed=0
         for card in addedcards:
             changed+=1
-            print "+Inserted: ", smartcard.util.toHexString( card.atr )
+            #print "+Inserted: ", smartcard.util.toHexString( card.atr )
             cardInserted = True
         for card in removedcards:
             changed+=1
-            print "-Removed: ", smartcard.util.toHexString( card.atr )
+            #print "-Removed: ", smartcard.util.toHexString( card.atr )
             cardInserted = False
 
 	if changed>0 and self.onChange is not None:
@@ -115,9 +115,13 @@ class Identity(object):
 		print 'Identity.close'
 		self.readermonitor.deleteObserver(self.readerobserver)
 		self.cardmonitor.deleteObserver(self.cardobserver)
+                #self.readermonitor = None
+                #self.cardmonitor = None
+                #self.cardobserver = None
+                #self.readerobserver = None
 
 	def topographyChanged(self, msg):
-		print msg
+		#print msg
 
 		if not msg.isReader and msg.isInserted:
 			self.annotateNameAndSurname()
@@ -150,7 +154,7 @@ class Identity(object):
 			elif out is not None:
 				print "No identity found: output format unexpected(%s)%d"%( out, len(out))
 		#print "out(%s)"%out
-		print "err(%s)"%err
+		#print "err(%s)"%err
 		#for line in cmd:
 		#	print "(((%s)))"%cmd
 		#if nameAndSurname != self.nameAndSurname:

@@ -20,7 +20,7 @@ class observable(object):
         try:
             #print self, type(obj), obj, cls
             assert type(obj).__name__ == self.cls_name
-            print 'observable.__get__', self.event_path, self.var_value
+            #print 'observable.__get__', self.event_path, self.var_value
             return self.var_value
         except:
             traceback.print_exc()

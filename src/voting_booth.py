@@ -4,12 +4,12 @@ import threading
 import RPi.GPIO
 import model.observable
 
-led_gpio_pin = 23
+led_gpio_pin = 23 # GND+5
 led_secs_on = 4
 led_timer = None
-switch_gpio_pin = 24
-switch_gpio_active_high = True
-buzzer_gpio_pin = 25
+switch_gpio_pin = 24 # GND+6
+switch_gpio_active_high = False
+buzzer_gpio_pin = 25 # GND+8
 buzzer_secs_on = 1
 duration = 10
 

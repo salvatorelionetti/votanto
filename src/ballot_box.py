@@ -31,11 +31,11 @@ class ballot_box(pyinotify.ProcessEvent):
         self.initialized = False
         self.pathname = None
         self.lock = threading.Lock()
-        #self.wm = pyinotify.WatchManager() # Watch Manager
-        #mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE
-        #self.notifier = pyinotify.ThreadedNotifier(self.wm, self)
-        #self.notifier.start()
-        #self.wdd = self.wm.add_watch('/media', mask, rec=False)
+        self.wm = pyinotify.WatchManager() # Watch Manager
+        mask = pyinotify.IN_DELETE | pyinotify.IN_CREATE
+        self.notifier = pyinotify.ThreadedNotifier(self.wm, self)
+        self.notifier.start()
+        self.wdd = self.wm.add_watch('/media', mask, rec=False)
 
         # Acquire initial state
         with self.lock:
@@ -44,8 +44,8 @@ class ballot_box(pyinotify.ProcessEvent):
 
     def close(self):
         print 'ballot_box.close'
-        #self.wm.rm_watch(self.wdd.values())
-        #self.notifier.stop()
+        self.wm.rm_watch(self.wdd.values())
+        self.notifier.stop()
         
     def evaluate_media(self):
         L = os.listdir('/media')

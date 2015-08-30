@@ -15,7 +15,8 @@ def func_analyze(f):
     return (nargs, only_self_arg)
 
 def notify(event_path):
-    print 'react.notify', event_path
+    #print 'react.notify', event_path
+    #print chain
     if event_path in chain:
         for f in chain[event_path]:
             nargs, only_self_arg = func_analyze(f)
